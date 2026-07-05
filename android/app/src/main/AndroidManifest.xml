@@ -1,8 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Obrigatório em release: Supabase e todo o tráfego de rede (os manifests
+         de debug/profile já têm a permissão, mas o de release vem daqui) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
+    <!-- Só SCHEDULE_EXACT_ALARM (revogável pelo usuário): USE_EXACT_ALARM é
+         restrito pela política do Play a despertadores/calendários e causaria
+         rejeição na revisão. Quando exato for negado (Android 14+), o código
+         cai para agendamento inexato (notificacoes.dart). -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Relaxa e Durma: mantém o áudio tocando com a tela desligada -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>

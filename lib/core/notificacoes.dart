@@ -121,6 +121,22 @@ class KairoNotificacoes {
     color: _corMarca,
   );
 
+  /// Modo de agendamento Android: exato quando permitido, senão inexato.
+  /// O manifest declara só SCHEDULE_EXACT_ALARM (USE_EXACT_ALARM é restrito
+  /// pela política do Play a despertadores/calendários), e no Android 14+
+  /// essa permissão vem NEGADA por padrão — agendar em modo exato sem ela
+  /// lança PlatformException('exact_alarms_not_permitted') e o lembrete
+  /// nunca é criado. Pra lembretes diários, o modo inexato basta.
+  static Future<AndroidScheduleMode> _modoAgendamento() async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) return AndroidScheduleMode.exactAllowWhileIdle; // iOS: ignorado
+    final exatoPermitido = await android.canScheduleExactNotifications() ?? false;
+    return exatoPermitido
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
+  }
+
   static Future<bool> pedirPermissao() async {
     final status = await Permission.notification.request();
     return status.isGranted;
@@ -163,7 +179,7 @@ class KairoNotificacoes {
       _fraseAleatoria(),
       quando,
       detalhes,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _modoAgendamento(),
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time, // repete diariamente
     );
@@ -199,7 +215,7 @@ class KairoNotificacoes {
       T.cartaDomingoChegou,
       quando,
       detalhes,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _modoAgendamento(),
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime, // toda semana
     );
@@ -250,7 +266,7 @@ class KairoNotificacoes {
       corpo,
       quando,
       detalhes,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _modoAgendamento(),
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time, // repete diariamente
     );

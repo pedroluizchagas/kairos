@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recursos referenciados só por strings no Dart (invisíveis pro resource
+     shrinker do R8): sem este keep, o ícone some do AAB release e as
+     notificações falham com 'invalid_icon'. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_kairo" />
