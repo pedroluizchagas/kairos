@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -287,13 +288,19 @@ class _TelaPortaoState extends State<TelaPortao> {
                       ),
 
                       // Já assinou na web (Stripe): reconcilia pelo e-mail.
-                      Center(
-                        child: TextButton(
-                          onPressed: _processando ? null : _restaurarWeb,
-                          child: Text(T.premiumJaCompreiWeb,
-                              style: KT.caption(cor: KC.fumo)),
+                      // SÓ no Android — no iOS qualquer menção a compra fora
+                      // da loja fere o anti-steering da Guideline 3.1.1
+                      // (rejeição de 07/2026). Quem assinou na landing segue
+                      // coberto pela reconciliação automática no signup e
+                      // pelo refresh do entitlement na entrada do portão.
+                      if (defaultTargetPlatform == TargetPlatform.android)
+                        Center(
+                          child: TextButton(
+                            onPressed: _processando ? null : _restaurarWeb,
+                            child: Text(T.premiumJaCompreiWeb,
+                                style: KT.caption(cor: KC.fumo)),
+                          ),
                         ),
-                      ),
 
                       // Restaurar + Sair (escape obrigatório).
                       Row(
