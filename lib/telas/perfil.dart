@@ -23,6 +23,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
   Map<String, dynamic>? _perfil;
   String? _avatarUrl;
   bool _carregando = true;
+  bool _excluindo = false;
 
   @override
   void initState() {
@@ -348,6 +349,122 @@ class _TelaPerfilState extends State<TelaPerfil> {
     );
   }
 
+  /// Exclusão definitiva da conta (exigência Apple 5.1.1(v) / Google). A Edge
+  /// Function `delete-account` apaga Storage + auth.users (as tabelas caem por
+  /// cascade); aqui confirmamos, chamamos e encerramos a sessão local.
+  Future<void> _excluirConta() async {
+    final confirmou = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: KC.sumi,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 32,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: KC.grafite,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Text(T.excluirContaPergunta, style: KT.titulo()),
+              const SizedBox(height: 12),
+              Text(T.excluirContaAviso, style: KT.bodySerif(cor: KC.cinza)),
+              const SizedBox(height: 12),
+              Text(T.excluirContaAssinatura, style: KT.caption(cor: KC.fumo)),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: KC.aka,
+                    foregroundColor: KC.washi,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(T.excluirDefinitivamente,
+                      style: KT.body(cor: KC.washi)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: KC.washi,
+                    side: BorderSide(color: KC.grafite, width: 1),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(T.ficar, style: KT.body()),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmou != true || !mounted) return;
+
+    HapticFeedback.mediumImpact();
+    setState(() => _excluindo = true);
+    try {
+      final resp = await supabase.functions.invoke('delete-account');
+      if (resp.status != 200) {
+        throw Exception('delete-account ${resp.status}: ${resp.data}');
+      }
+
+      // A conta já não existe no servidor — resta encerrar a sessão local.
+      await CacheLocal.limparUsuario();
+      Billing.instance.limparCache();
+      try {
+        await supabase.auth.signOut(scope: SignOutScope.local);
+      } catch (_) {
+        // Sessão já invalidada no servidor.
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) => const TelaBoasVindas(),
+          transitionsBuilder: (_, anim, _, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 600),
+        ),
+        (route) => false,
+      );
+    } catch (e) {
+      debugPrint('[Conta] exclusão falhou: $e');
+      if (!mounted) return;
+      setState(() => _excluindo = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: KC.grafite,
+          content: Text(T.excluirContaErro, style: KT.caption(cor: KC.washi)),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final email = supabase.auth.currentUser?.email ?? '—';
@@ -627,6 +744,29 @@ class _TelaPerfilState extends State<TelaPerfil> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Text(T.sairConta, style: KT.body(cor: KC.aka)),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Excluir conta (Apple 5.1.1(v)): exclusão definitiva,
+                    // iniciada e concluída dentro do app.
+                    GestureDetector(
+                      onTap: _excluindo ? null : _excluirConta,
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: _excluindo
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: KC.aka,
+                                ),
+                              )
+                            : Text(T.excluirConta,
+                                style: KT.body(cor: KC.aka)),
                       ),
                     ),
 
