@@ -57,7 +57,8 @@ Não vendemos seus dados. Compartilhamos com prestadores estritamente necessári
 | Prestador | Finalidade | Dados |
 |---|---|---|
 | **Supabase** | Hospedagem, banco de dados, autenticação e armazenamento | Conta, perfil, conteúdo |
-| **Anthropic (Claude)** | Processar as mensagens do Mentor e gerar as cartas | Texto das suas mensagens/reflexões |
+| **Anthropic (Claude)** | Processar as mensagens do Mentor e gerar as cartas | Texto das suas mensagens/reflexões e dados do seu perfil (nome, identidade, foco, ritmo) |
+| **Groq (Whisper)** | Transcrever as mensagens de voz do Mentor | Áudio das mensagens de voz |
 | **Apple / Google** | Distribuição do app e processamento de pagamentos | Status de compra/assinatura |
 | **Stripe** | Pagamento de assinatura **na web** | Status de pagamento (cartão fica na Stripe) |
 
@@ -66,14 +67,20 @@ processamento de dados.
 
 ## 5. Inteligência Artificial
 
-O Mentor e as cartas semanais usam modelos da **Anthropic (Claude)**. O texto que
-você envia é processado para gerar as respostas. **Não** usamos seu conteúdo
-pessoal para treinar modelos de terceiros. As respostas da IA são geradas
-automaticamente e têm caráter reflexivo — veja a isenção nos Termos de Uso.
+O Mentor e as cartas semanais usam modelos da **Anthropic (Claude)**: o texto das
+suas mensagens, as reflexões do Jardim (usadas na carta semanal) e os dados do seu
+perfil (nome, identidade, foco e ritmo) são processados para gerar as respostas.
+As mensagens de voz são transcritas por modelos da **Groq (Whisper)**: o áudio é
+enviado apenas para transcrição. **Não** usamos seu conteúdo pessoal para treinar
+modelos de terceiros.
+
+O app **pede o seu consentimento antes do primeiro uso** desses recursos; sem o
+aceite, nenhum dado seu é enviado aos provedores de IA. As respostas da IA são
+geradas automaticamente e têm caráter reflexivo — veja a isenção nos Termos de Uso.
 
 ## 6. Transferência internacional
 
-Alguns prestadores (Supabase, Anthropic, Apple, Google, Stripe) processam dados
+Alguns prestadores (Supabase, Anthropic, Groq, Apple, Google, Stripe) processam dados
 **fora do Brasil**, inclusive nos Estados Unidos. Ao usar o Kairo, você concorda
 com essa transferência, realizada com salvaguardas contratuais adequadas.
 
