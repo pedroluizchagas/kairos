@@ -8,6 +8,7 @@ import 'package:record/record.dart';
 import '../core/kairo_tema.dart';
 import '../core/claude_api.dart';
 import '../core/banco.dart';
+import '../core/consentimento_ia.dart';
 import '../core/transcricao.dart';
 import '../core/i18n.dart';
 import 'premium.dart';
@@ -134,6 +135,11 @@ class _TelaMentorState extends State<TelaMentor> {
     final texto = _controller.text.trim();
     if (texto.isEmpty || _pensando || _gravando) return;
 
+    // Consentimento de IA (Apple 5.1.1(i)): nada sai do aparelho antes do
+    // aceite. Se recusar, a mensagem fica intacta no campo.
+    if (!await ConsentimentoIA.garantir(context)) return;
+    if (!mounted) return;
+
     HapticFeedback.lightImpact();
 
     setState(() {
@@ -204,6 +210,10 @@ class _TelaMentorState extends State<TelaMentor> {
 
   Future<void> _iniciarGravacao() async {
     if (_pensando || _gravando) return;
+    // A voz vira texto num provedor externo (Groq) — mesmo consentimento do
+    // chat, pedido antes de sequer começar a gravar.
+    if (!await ConsentimentoIA.garantir(context)) return;
+    if (!mounted) return;
     try {
       if (!await _gravador.hasPermission()) {
         _snack(T.mentorMicNegado);

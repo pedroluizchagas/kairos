@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/kairo_tema.dart';
 import '../core/banco.dart';
 import '../core/cache.dart';
+import '../core/consentimento_ia.dart';
 import '../core/datas.dart';
 import '../core/i18n.dart';
 import '../main.dart';
@@ -226,6 +227,10 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
 
   Future<void> _gerarCarta() async {
     if (_gerandoCarta) return;
+    // A carta envia perfil + reflexões da semana ao provedor de IA — exige o
+    // mesmo consentimento do Mentor (cobre também a geração automática).
+    if (!await ConsentimentoIA.garantir(context)) return;
+    if (!mounted) return;
     setState(() {
       _gerandoCarta = true;
       _erroCarta = null;

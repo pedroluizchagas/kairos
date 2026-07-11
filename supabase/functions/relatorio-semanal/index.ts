@@ -94,6 +94,16 @@ Deno.serve(async (req: Request) => {
       .eq('id', user.id)
       .maybeSingle();
 
+    // Consentimento de IA (Apple 5.1.1(i)/5.1.2(i)): a carta envia perfil e
+    // reflexões à Anthropic. Sem o aceite registrado, não gera — reforça o
+    // gate do app e cobre caminhos que não passam pela UI (cron de domingo).
+    if (!perfil?.consentimento_ia_em) {
+      return new Response(JSON.stringify({ error: 'sem_consentimento' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Calcula a semana da carta:
     // semana_fim = domingo mais recente (ou hoje se hoje é domingo)
     // semana_inicio = segunda anterior = semana_fim - 6 dias

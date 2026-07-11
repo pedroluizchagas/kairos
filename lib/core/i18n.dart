@@ -1140,6 +1140,70 @@ class T {
   static String get sair  => _g('Sair', 'Sign out', 'Salir', 'Abmelden');
   static String get ficar => _g('Ficar', 'Stay', 'Quedarme', 'Bleiben');
 
+  // ── EXCLUSÃO DE CONTA (exigência Apple 5.1.1(v) / Google) ───────────────────
+  static String get excluirConta => _g(
+    'Excluir conta',
+    'Delete account',
+    'Eliminar cuenta',
+    'Konto löschen',
+  );
+  static String get excluirContaPergunta => _g(
+    'Excluir sua conta?',
+    'Delete your account?',
+    '¿Eliminar tu cuenta?',
+    'Dein Konto löschen?',
+  );
+  static String get excluirContaAviso => _g(
+    'Isto apaga permanentemente sua conta e todos os seus dados: perfil, conversas com o Mentor, reflexões do Jardim, práticas e cartas semanais. Não dá para desfazer.',
+    'This permanently deletes your account and all your data: profile, Mentor conversations, Garden reflections, practices and weekly letters. This cannot be undone.',
+    'Esto elimina permanentemente tu cuenta y todos tus datos: perfil, conversaciones con el Mentor, reflexiones del Jardín, prácticas y cartas semanales. No se puede deshacer.',
+    'Dies löscht dein Konto und alle deine Daten dauerhaft: Profil, Gespräche mit dem Mentor, Garten-Reflexionen, Praktiken und Wochenbriefe. Das kann nicht rückgängig gemacht werden.',
+  );
+  static String get excluirContaAssinatura => _g(
+    'Assinaturas ativas não são canceladas automaticamente — cancele nos ajustes da App Store ou do Google Play.',
+    'Active subscriptions are not canceled automatically — cancel them in your App Store or Google Play settings.',
+    'Las suscripciones activas no se cancelan automáticamente: cancélalas en los ajustes del App Store o de Google Play.',
+    'Aktive Abos werden nicht automatisch gekündigt — kündige sie in den Einstellungen des App Store oder von Google Play.',
+  );
+  static String get excluirDefinitivamente => _g(
+    'Excluir definitivamente',
+    'Delete permanently',
+    'Eliminar definitivamente',
+    'Endgültig löschen',
+  );
+  static String get excluirContaErro => _g(
+    'Não foi possível excluir a conta agora. Tente novamente.',
+    'Could not delete the account right now. Try again.',
+    'No se pudo eliminar la cuenta ahora. Inténtalo de nuevo.',
+    'Das Konto konnte gerade nicht gelöscht werden. Versuche es erneut.',
+  );
+
+  // ── CONSENTIMENTO DE IA (Apple 5.1.1(i)/5.1.2(i): disclosure + permissão) ───
+  static String get iaConsentTitulo => _g(
+    'O Mentor usa inteligência artificial',
+    'The Mentor uses artificial intelligence',
+    'El Mentor usa inteligencia artificial',
+    'Der Mentor nutzt künstliche Intelligenz',
+  );
+  static String get iaConsentTexto => _g(
+    'Para gerar as respostas do Mentor e a sua carta semanal, o Kairo envia dados seus a provedores de IA: as mensagens desta conversa, o seu perfil (nome, identidade, foco e ritmo), as reflexões do Jardim (usadas na carta semanal) e o áudio das mensagens de voz (para transcrição).\n\nEsses dados são processados pela Anthropic (Claude) e pela Groq (transcrição de voz), nos Estados Unidos, e não são usados para treinar os modelos delas.',
+    'To generate the Mentor\'s replies and your weekly letter, Kairo sends some of your data to AI providers: the messages in this conversation, your profile (name, identity, focus and pace), your Garden reflections (used in the weekly letter) and the audio of voice messages (for transcription).\n\nThis data is processed by Anthropic (Claude) and Groq (voice transcription) in the United States, and is not used to train their models.',
+    'Para generar las respuestas del Mentor y tu carta semanal, Kairo envía algunos de tus datos a proveedores de IA: los mensajes de esta conversación, tu perfil (nombre, identidad, enfoque y ritmo), tus reflexiones del Jardín (usadas en la carta semanal) y el audio de los mensajes de voz (para transcripción).\n\nEstos datos son procesados por Anthropic (Claude) y Groq (transcripción de voz) en Estados Unidos, y no se usan para entrenar sus modelos.',
+    'Um die Antworten des Mentors und deinen Wochenbrief zu erstellen, sendet Kairo einige deiner Daten an KI-Anbieter: die Nachrichten dieses Gesprächs, dein Profil (Name, Identität, Fokus und Tempo), deine Garten-Reflexionen (für den Wochenbrief) und die Audioaufnahmen der Sprachnachrichten (zur Transkription).\n\nDiese Daten werden von Anthropic (Claude) und Groq (Sprachtranskription) in den USA verarbeitet und nicht zum Training ihrer Modelle verwendet.',
+  );
+  static String get iaConsentAceitar => _g(
+    'Concordar e continuar',
+    'Agree and continue',
+    'Aceptar y continuar',
+    'Zustimmen und fortfahren',
+  );
+  static String get iaConsentAgoraNao => _g(
+    'Agora não',
+    'Not now',
+    'Ahora no',
+    'Jetzt nicht',
+  );
+
   // ── AVATAR ─────────────────────────────────────────────────────────────────
   static String get trocarFoto    => _g('Trocar foto',    'Change photo',   'Cambiar foto',   'Foto ändern');
   static String get adicionarFoto => _g('Adicionar foto', 'Add photo',      'Agregar foto',   'Foto hinzufügen');
