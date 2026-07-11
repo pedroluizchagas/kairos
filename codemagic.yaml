@@ -141,3 +141,67 @@ workflows:
         notify:
           success: true
           failure: true
+
+  android-internal:
+    name: Kairo Android - Internal Testing
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      groups:
+        # Mesmo grupo do iOS: SUPABASE_URL e SUPABASE_KEY (recriam o .env).
+        - kairo_env
+        # Criar em Codemagic > Environment variables (marcar "Secure"):
+        #   CM_KEYSTORE          = base64 da upload key  (base64 -w0 ~/kairo-upload.jks)
+        #   CM_KEYSTORE_PASSWORD = senha do keystore
+        #   CM_KEY_ALIAS         = upload
+        #   CM_KEY_PASSWORD      = senha da key
+        - kairo_android_sign
+        # Service account JSON (Play Developer API) com permissao de publicar na
+        # trilha interna. Pode ser a MESMA SA da fase D (re-fetch), desde que
+        # tambem receba "Release to testing tracks".
+        #   GCLOUD_SERVICE_ACCOUNT_CREDENTIALS = JSON inteiro da service account
+        - kairo_google_play
+    scripts:
+      - name: Recriar arquivo .env (asset exigido pelo app)
+        script: |
+          cat > "$CM_BUILD_DIR/.env" <<EOF
+          SUPABASE_URL=$SUPABASE_URL
+          SUPABASE_KEY=$SUPABASE_KEY
+          EOF
+      - name: Materializar upload key + key.properties
+        script: |
+          # A keystore chega em base64 (evita quebras de linha em variavel).
+          echo "$CM_KEYSTORE" | base64 --decode > "$CM_BUILD_DIR/android/app/upload-keystore.jks"
+          # key.properties no formato lido por android/app/build.gradle.kts.
+          cat > "$CM_BUILD_DIR/android/key.properties" <<EOF
+          storeFile=$CM_BUILD_DIR/android/app/upload-keystore.jks
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          keyPassword=$CM_KEY_PASSWORD
+          EOF
+      - name: flutter pub get
+        script: flutter pub get
+      - name: Build AAB (release)
+        script: |
+          flutter build appbundle --release \
+            --build-name=1.0.0 \
+            --build-number=$(($(date +%s) / 60))
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab
+      - build/app/outputs/mapping/release/mapping.txt
+    publishing:
+      email:
+        recipients:
+          - realpedroluizchagas@gmail.com
+        notify:
+          success: true
+          failure: true
+      # ⚠️ Mantenha COMENTADO ate o 1o AAB ser enviado MANUALMENTE pelo Play
+      # Console (a 1a versao de um app novo precisa ser subida pela UI para
+      # ativar o Play App Signing). Depois disso, descomente para publicar
+      # automaticamente na trilha interna a cada build.
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal
+      #   submit_as_draft: false
