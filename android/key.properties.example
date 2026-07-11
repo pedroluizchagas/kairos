@@ -1,0 +1,21 @@
+# Modelo da configuração de assinatura de release do Android.
+#
+# COPIE este arquivo para `android/key.properties` (que é IGNORADO pelo git —
+# ver android/.gitignore) e preencha com os dados da SUA upload key.
+#
+# Gerar a upload key (uma vez; guarde o .jks e as senhas num cofre):
+#   keytool -genkey -v -keystore ~/kairo-upload.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# storeFile  = caminho ABSOLUTO do .jks (ex.: /home/voce/kairo-upload.jks)
+# storePassword / keyPassword = as senhas definidas no keytool
+# keyAlias   = o alias usado (-alias upload)
+#
+# Usamos Play App Signing: esta é a UPLOAD key. O Google guarda a chave de
+# assinatura final do app. Se perder a upload key, dá para resetar no Play
+# Console (Setup > App integrity).
+
+storeFile=/CAMINHO/ABSOLUTO/kairo-upload.jks
+storePassword=SUA_SENHA_DO_KEYSTORE
+keyAlias=upload
+keyPassword=SUA_SENHA_DA_KEY
