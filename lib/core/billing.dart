@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import '../main.dart';
 
@@ -9,6 +11,47 @@ import '../main.dart';
 /// caso comum em conta nova; sem ele a UI ficaria muda (exigência de UX e de
 /// review da Apple: "Restore" precisa dar feedback sempre).
 enum BillingEvento { processando, sucesso, restaurado, cancelada, erro, nadaParaRestaurar }
+
+/// Período de cobrança de um plano, derivado dos dados da loja (Android:
+/// `billingPeriod` ISO-8601 do base plan; iOS: heurística do product id).
+enum PeriodoPlano { mensal, anual, indefinido }
+
+/// Um plano exibível no paywall — exatamente UM cartão por plano.
+///
+/// Existe porque a Play devolve UMA [ProductDetails] POR OFERTA: um produto
+/// `premium` com base plans mensal/anual, cada um com oferta de teste grátis,
+/// chega como 4 entradas — e nas de teste `price` é o da PRIMEIRA fase
+/// ("Grátis"), não o do plano. Renderizar a lista crua duplica cartões e
+/// esconde o preço real. Aqui as ofertas voltam a ser planos: [produto] é a
+/// instância exata a comprar (carrega o offerToken do teste grátis, quando o
+/// usuário é elegível) e [preco] é sempre o preço RECORRENTE.
+class PlanoPremium {
+  const PlanoPremium({
+    required this.produto,
+    required this.titulo,
+    required this.preco,
+    required this.precoBruto,
+    required this.periodo,
+    required this.temTeste,
+  });
+
+  /// Instância a passar em [Billing.comprar] — no Android define a oferta.
+  final ProductDetails produto;
+
+  /// Título da loja sem o sufixo "(Kairo)" que a Play acrescenta.
+  final String titulo;
+
+  /// Preço recorrente formatado na moeda do usuário (ex.: "R$ 34,90").
+  final String preco;
+
+  /// Valor numérico de [preco] — ordenação e cálculo de economia do anual.
+  final double precoBruto;
+
+  final PeriodoPlano periodo;
+
+  /// Se a oferta escolhida inclui período de teste grátis (badge/CTA da UI).
+  final bool temTeste;
+}
 
 /// Camada de billing do client (In-App Purchase). A verdade da assinatura vive
 /// em `public.subscriptions` (escrita só por service role via webhooks /
@@ -119,6 +162,97 @@ class Billing {
     return lista;
   }
 
+  /// Planos prontos para o paywall: um por plano (mensal/anual), com preço
+  /// recorrente e a oferta certa para a compra. Vazio se a loja estiver
+  /// indisponível. É ESTA a lista que as telas renderizam — nunca a crua de
+  /// [produtos] (ver [PlanoPremium]).
+  Future<List<PlanoPremium>> planos() async => mapearPlanos(await produtos());
+
+  /// Função pura (testável sem loja): converte a lista crua de [produtos] em
+  /// planos de exibição. Entradas da Play são reagrupadas por base plan; as
+  /// demais (iOS e o override de testes) viram um plano cada.
+  @visibleForTesting
+  static List<PlanoPremium> mapearPlanos(List<ProductDetails> produtos) {
+    final porBasePlan = <String, List<GooglePlayProductDetails>>{};
+    final planos = <PlanoPremium>[];
+    for (final p in produtos) {
+      final indice = p is GooglePlayProductDetails ? p.subscriptionIndex : null;
+      if (p is! GooglePlayProductDetails || indice == null) {
+        planos.add(_planoGenerico(p));
+        continue;
+      }
+      final oferta = p.productDetails.subscriptionOfferDetails![indice];
+      porBasePlan.putIfAbsent(oferta.basePlanId, () => []).add(p);
+    }
+    planos.addAll(porBasePlan.values.map(_planoGoogle));
+    planos.sort((a, b) => a.precoBruto.compareTo(b.precoBruto));
+    return planos;
+  }
+
+  /// Colapsa as ofertas de um mesmo base plan num único plano. A compra usa a
+  /// oferta com teste grátis quando presente (a Play só lista ofertas para as
+  /// quais o usuário é elegível; quem já usou o teste recebe só o base plan).
+  /// O preço exibido é o da última fase PAGA — a fase "grátis" do teste vem
+  /// antes e nunca é o preço do plano.
+  static PlanoPremium _planoGoogle(List<GooglePlayProductDetails> grupo) {
+    SubscriptionOfferDetailsWrapper ofertaDe(GooglePlayProductDetails p) =>
+        p.productDetails.subscriptionOfferDetails![p.subscriptionIndex!];
+    bool comTeste(GooglePlayProductDetails p) =>
+        ofertaDe(p).pricingPhases.any((f) => f.priceAmountMicros == 0);
+
+    final escolhida = grupo.firstWhere(
+      comTeste,
+      orElse: () => grupo.firstWhere(
+        (p) => ofertaDe(p).offerId == null, // base plan puro, sem oferta
+        orElse: () => grupo.first,
+      ),
+    );
+    final fases = ofertaDe(escolhida).pricingPhases;
+    final faseBase = fases.lastWhere(
+      (f) => f.priceAmountMicros > 0,
+      orElse: () => fases.last,
+    );
+    return PlanoPremium(
+      produto: escolhida,
+      titulo: _tituloLimpo(escolhida.title),
+      preco: faseBase.formattedPrice,
+      precoBruto: faseBase.priceAmountMicros / 1000000.0,
+      periodo: _periodoIso8601(faseBase.billingPeriod),
+      temTeste: comTeste(escolhida),
+    );
+  }
+
+  /// iOS (1 produto por plano) e override de testes: o período sai do product
+  /// id ('app.kairo.premium.monthly'/'.anual'). O teste de 7 dias existe nos
+  /// dois produtos como introductory offer da App Store Connect.
+  static PlanoPremium _planoGenerico(ProductDetails p) {
+    final id = p.id.toLowerCase();
+    final anual = id.contains('year') || id.contains('anu');
+    final mensal = id.contains('month') || id.contains('mens');
+    return PlanoPremium(
+      produto: p,
+      titulo: _tituloLimpo(p.title),
+      preco: p.price,
+      precoBruto: p.rawPrice,
+      periodo: anual
+          ? PeriodoPlano.anual
+          : (mensal ? PeriodoPlano.mensal : PeriodoPlano.indefinido),
+      temTeste: true,
+    );
+  }
+
+  /// `billingPeriod` ISO-8601 do base plan: "P1M" mensal, "P1Y"/"P12M" anual.
+  static PeriodoPlano _periodoIso8601(String periodo) {
+    if (periodo.contains('Y') || periodo == 'P12M') return PeriodoPlano.anual;
+    if (periodo.contains('M')) return PeriodoPlano.mensal;
+    return PeriodoPlano.indefinido;
+  }
+
+  /// A Play entrega o título como "Kairo Premium (Kairo)" — o "(app)" final é
+  /// acréscimo da loja, não parte do nome do produto.
+  static String _tituloLimpo(String titulo) =>
+      titulo.replaceFirst(RegExp(r'\s*\([^()]*\)\s*$'), '').trim();
+
   /// Dispara a compra nativa do produto. A identidade do usuário viaja na
   /// compra: iOS `appAccountToken` / Android `obfuscatedAccountId` (ambos
   /// mapeados de `applicationUserName = user.id`, que é o UUID do Supabase).
@@ -130,7 +264,17 @@ class Billing {
       return;
     }
     final param = PurchaseParam(productDetails: p, applicationUserName: user.id);
-    await _iap.buyNonConsumable(purchaseParam: param);
+    try {
+      final abriu = await _iap.buyNonConsumable(purchaseParam: param);
+      // Android devolve false quando a folha de compra NEM ABRE (ex.: já
+      // existe assinatura ativa nesta conta Google) — e nesse caso nada chega
+      // no purchaseStream. Sem emitir erro aqui o toque morre em silêncio;
+      // "Restaurar compras" é o caminho para reassociar a assinatura.
+      if (!abriu) _emitir(BillingEvento.erro);
+    } on PlatformException catch (e) {
+      debugPrint('[Billing] buyNonConsumable ${e.code}: ${e.message}');
+      _emitir(BillingEvento.erro);
+    }
   }
 
   /// Reassocia compras anteriores (troca de aparelho / reinstalação). Os

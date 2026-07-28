@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/kairo_tema.dart';
 import '../core/billing.dart';
@@ -23,7 +22,7 @@ class TelaPremium extends StatefulWidget {
 class _TelaPremiumState extends State<TelaPremium> {
   bool _carregando = true;
   bool _processando = false;
-  List<ProductDetails> _produtos = const [];
+  List<PlanoPremium> _planos = const [];
   String? _erro;
   String? _aviso;
 
@@ -42,10 +41,10 @@ class _TelaPremiumState extends State<TelaPremium> {
 
   Future<void> _carregar() async {
     await Billing.instance.refresh();
-    final produtos = await Billing.instance.produtos();
+    final planos = await Billing.instance.planos();
     if (!mounted) return;
     setState(() {
-      _produtos = produtos;
+      _planos = planos;
       _carregando = false;
     });
   }
@@ -107,12 +106,12 @@ class _TelaPremiumState extends State<TelaPremium> {
     }
   }
 
-  Future<void> _assinar(ProductDetails p) async {
+  Future<void> _assinar(PlanoPremium plano) async {
     setState(() {
       _erro = null;
       _aviso = null;
     });
-    await Billing.instance.comprar(p);
+    await Billing.instance.comprar(plano.produto);
   }
 
   Future<void> _restaurar() async {
@@ -192,7 +191,7 @@ class _TelaPremiumState extends State<TelaPremium> {
                       // Oferta de planos (oculta quando já premium)
                       if (!_carregando && !premium) ...[
                         const SizedBox(height: 40),
-                        if (_produtos.isEmpty) ...[
+                        if (_planos.isEmpty) ...[
                           Text(T.premiumSemProdutos, style: KT.caption(cor: KC.fumo)),
                           const SizedBox(height: 12),
                           TextButton(
@@ -212,13 +211,13 @@ class _TelaPremiumState extends State<TelaPremium> {
                             ),
                           ),
                         ] else ...[
-                          ..._produtos.map(
-                            (p) => Padding(
+                          ..._planos.map(
+                            (pl) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _CartaoPlano(
-                                produto: p,
+                                plano: pl,
                                 habilitado: !_processando,
-                                onTap: () => _assinar(p),
+                                onTap: () => _assinar(pl),
                               ),
                             ),
                           ),
@@ -283,20 +282,31 @@ class _TelaPremiumState extends State<TelaPremium> {
   }
 }
 
-/// Cartão de um plano de assinatura. Título e preço vêm do `ProductDetails`
+/// Cartão de um plano de assinatura. Preço vem da loja via [PlanoPremium]
 /// (nunca hardcoded — exigência de conformidade e de moeda/localização).
 class _CartaoPlano extends StatelessWidget {
-  final ProductDetails produto;
+  final PlanoPremium plano;
   final bool habilitado;
   final VoidCallback onTap;
   const _CartaoPlano({
-    required this.produto,
+    required this.plano,
     required this.habilitado,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Mensal/Anual como rótulo: o título da loja não distingue os planos.
+    final titulo = switch (plano.periodo) {
+      PeriodoPlano.mensal => T.planoMensal,
+      PeriodoPlano.anual => T.planoAnual,
+      PeriodoPlano.indefinido => plano.titulo,
+    };
+    final periodo = switch (plano.periodo) {
+      PeriodoPlano.mensal => T.periodoMes,
+      PeriodoPlano.anual => T.periodoAno,
+      PeriodoPlano.indefinido => '',
+    };
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -314,9 +324,14 @@ class _CartaoPlano extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(produto.title, style: KT.body(cor: KC.fundo)),
+                    Text(titulo, style: KT.body(cor: KC.fundo)),
                     const SizedBox(height: 4),
-                    Text(produto.price, style: KT.caption(cor: KC.sumi)),
+                    Text(
+                      periodo.isEmpty
+                          ? plano.preco
+                          : '${plano.preco} /$periodo',
+                      style: KT.caption(cor: KC.sumi),
+                    ),
                   ],
                 ),
               ),

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/kairo_tema.dart';
 import '../core/billing.dart';
@@ -30,7 +29,7 @@ class TelaPortao extends StatefulWidget {
 class _TelaPortaoState extends State<TelaPortao> {
   bool _checando = true;
   bool _processando = false;
-  List<ProductDetails> _produtos = const [];
+  List<PlanoPremium> _planos = const [];
   String? _erro;
   String? _aviso;
 
@@ -56,10 +55,10 @@ class _TelaPortaoState extends State<TelaPortao> {
       _entrarNoApp();
       return;
     }
-    final produtos = await Billing.instance.produtos();
+    final planos = await Billing.instance.planos();
     if (!mounted) return;
     setState(() {
-      _produtos = produtos;
+      _planos = planos;
       _checando = false;
     });
   }
@@ -113,12 +112,12 @@ class _TelaPortaoState extends State<TelaPortao> {
     }
   }
 
-  Future<void> _assinar(ProductDetails p) async {
+  Future<void> _assinar(PlanoPremium plano) async {
     setState(() {
       _erro = null;
       _aviso = null;
     });
-    await Billing.instance.comprar(p);
+    await Billing.instance.comprar(plano.produto);
   }
 
   Future<void> _restaurar() async {
@@ -157,33 +156,23 @@ class _TelaPortaoState extends State<TelaPortao> {
     }
   }
 
-  String _periodo(ProductDetails p) {
-    final id = p.id.toLowerCase();
-    if (id.contains('year') || id.contains('annual') || id.contains('anu')) {
-      return T.periodoAno;
-    }
-    if (id.contains('month') || id.contains('mens')) return T.periodoMes;
-    return '';
-  }
-
   @override
   Widget build(BuildContext context) {
     // Identifica mensal/anual para destacar o "melhor valor" (% de economia do
     // anual frente a 12× o mensal). Só aparece quando ambos os planos carregam.
-    ProductDetails? mensal;
-    ProductDetails? anual;
-    for (final p in _produtos) {
-      final per = _periodo(p);
-      if (per == T.periodoMes) {
-        mensal = p;
-      } else if (per == T.periodoAno) {
-        anual = p;
+    PlanoPremium? mensal;
+    PlanoPremium? anual;
+    for (final pl in _planos) {
+      if (pl.periodo == PeriodoPlano.mensal) {
+        mensal = pl;
+      } else if (pl.periodo == PeriodoPlano.anual) {
+        anual = pl;
       }
     }
     int? economiaPct;
     final m = mensal, a = anual;
-    if (m != null && a != null && m.rawPrice > 0) {
-      final pct = (100 * (1 - a.rawPrice / (m.rawPrice * 12))).round();
+    if (m != null && a != null && m.precoBruto > 0) {
+      final pct = (100 * (1 - a.precoBruto / (m.precoBruto * 12))).round();
       if (pct > 0) economiaPct = pct;
     }
 
@@ -228,7 +217,7 @@ class _TelaPortaoState extends State<TelaPortao> {
 
                               const SizedBox(height: 36),
 
-                              if (_produtos.isEmpty) ...[
+                              if (_planos.isEmpty) ...[
                                 Text(T.premiumSemProdutos, style: KT.caption(cor: KC.fumo)),
                                 const SizedBox(height: 12),
                                 // Sem retry o usuário ficaria preso numa tela
@@ -250,19 +239,16 @@ class _TelaPortaoState extends State<TelaPortao> {
                                   ),
                                 ),
                               ] else
-                                ..._produtos.map((p) {
-                                  final ehAnual =
-                                      anual != null && identical(p, anual);
+                                ..._planos.map((pl) {
+                                  final ehAnual = pl.periodo == PeriodoPlano.anual;
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 12),
                                     child: _CartaoPlano(
-                                      titulo: p.title,
-                                      preco: p.price,
-                                      periodo: _periodo(p),
+                                      plano: pl,
                                       destaque: ehAnual,
                                       economiaPct: ehAnual ? economiaPct : null,
                                       habilitado: !_processando,
-                                      onTap: () => _assinar(p),
+                                      onTap: () => _assinar(pl),
                                     ),
                                   );
                                 }),
@@ -329,17 +315,13 @@ class _TelaPortaoState extends State<TelaPortao> {
 /// Cartão de plano: nome + preço destacado, badge de teste e, no anual, o selo
 /// "melhor valor · economize X%". Tocar inicia a compra do plano.
 class _CartaoPlano extends StatelessWidget {
-  final String titulo;
-  final String preco;
-  final String periodo;
+  final PlanoPremium plano;
   final bool destaque;
   final int? economiaPct;
   final bool habilitado;
   final VoidCallback onTap;
   const _CartaoPlano({
-    required this.titulo,
-    required this.preco,
-    required this.periodo,
+    required this.plano,
     required this.destaque,
     required this.economiaPct,
     required this.habilitado,
@@ -348,6 +330,18 @@ class _CartaoPlano extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Mensal/Anual como rótulo do cartão: o título da loja não distingue os
+    // planos (na Play ambos chegam como "Kairo Premium").
+    final titulo = switch (plano.periodo) {
+      PeriodoPlano.mensal => T.planoMensal,
+      PeriodoPlano.anual => T.planoAnual,
+      PeriodoPlano.indefinido => plano.titulo,
+    };
+    final periodo = switch (plano.periodo) {
+      PeriodoPlano.mensal => T.periodoMes,
+      PeriodoPlano.anual => T.periodoAno,
+      PeriodoPlano.indefinido => '',
+    };
     final selo = destaque
         ? (economiaPct != null
               ? '${T.portaoMelhorValor} · ${T.portaoEconomizar(economiaPct!)}'
@@ -384,17 +378,22 @@ class _CartaoPlano extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(preco, style: KT.titulo(cor: KC.texto)),
+                  Text(plano.preco, style: KT.titulo(cor: KC.texto)),
                   if (periodo.isNotEmpty)
                     Text(' /$periodo', style: KT.caption(cor: KC.cinza)),
                 ],
               ),
               const SizedBox(height: 14),
+              // Sem teste grátis disponível (ex.: usuário já o consumiu na
+              // Play), o CTA vira "Assinar" — prometer teste seria enganoso.
               Row(
                 children: [
-                  _Pilula(texto: T.portaoTesteBadge),
+                  if (plano.temTeste) _Pilula(texto: T.portaoTesteBadge),
                   const Spacer(),
-                  Text(T.portaoComecarTeste, style: KT.caption(cor: KC.kin)),
+                  Text(
+                    plano.temTeste ? T.portaoComecarTeste : T.premiumAssinar,
+                    style: KT.caption(cor: KC.kin),
+                  ),
                   const SizedBox(width: 4),
                   Icon(Icons.arrow_forward, size: 14, color: KC.kin),
                 ],

@@ -481,6 +481,10 @@ class T {
   static String get conectorE => _g('e', 'and', 'y', 'und');
   static String get periodoMes => _g('mês', 'month', 'mes', 'Monat');
   static String get periodoAno => _g('ano', 'year', 'año', 'Jahr');
+  // Rótulos dos cartões de plano — o título da loja não distingue os planos
+  // (na Play ambos chegam como "Kairo Premium").
+  static String get planoMensal => _g('Mensal', 'Monthly', 'Mensual', 'Monatlich');
+  static String get planoAnual => _g('Anual', 'Annual', 'Anual', 'Jährlich');
 
   // ── PÁTIO (INÍCIO) ─────────────────────────────────────────────────────────
   static String get mentorLabel => _g('MENTOR', 'MENTOR', 'MENTOR', 'MENTOR');
