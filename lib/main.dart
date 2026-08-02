@@ -3,6 +3,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -118,11 +119,12 @@ class _KairoAppState extends State<KairoApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // Reage a mudanças de tema (claro/escuro) E de idioma. Quando o usuário
-    // troca qualquer um no Perfil, toda a árvore reconstrói. A `ValueKey`
-    // inclui ambos para garantir remount quando o tema muda (algumas cores
-    // são lidas no `initState`); para idioma, o rebuild dos `Text(T.X)` já
-    // re-resolve os getters, mas mantemos no key para consistência.
+    // Reage a mudanças de tema (claro/escuro) e de idioma. SEM ValueKey com
+    // tema/idioma: remontar o MaterialApp destruía a pilha de navegação e
+    // re-exibia a splash — o revisor da Apple via o app "reiniciar" ao
+    // escolher English (rejeição 2.1a). Quem troca tema/idioma é responsável
+    // por reconstruir a própria pilha (ver `_reconstruirPilha` em perfil.dart)
+    // ou navegar após a troca (seleção de idioma no primeiro launch).
     return ValueListenableBuilder<bool>(
       valueListenable: KC.temaEscuro,
       builder: (context, _, _) {
@@ -130,10 +132,24 @@ class _KairoAppState extends State<KairoApp> with WidgetsBindingObserver {
           valueListenable: T.idiomaNotifier,
           builder: (context, idioma, _) {
             return MaterialApp(
-              key: ValueKey('kairo-${KC.escuro}-$idioma'),
               title: 'Kairo',
               debugShowCheckedModeBanner: false,
               theme: kairoTema(),
+              // Localiza os widgets nativos do Material/Cupertino (TimePicker,
+              // menu de seleção de texto, tooltips) no idioma escolhido no
+              // app — sem isso ficavam SEMPRE em inglês (Apple 2.1a).
+              locale: Locale(idioma),
+              supportedLocales: const [
+                Locale('pt'),
+                Locale('en'),
+                Locale('es'),
+                Locale('de'),
+              ],
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
               home: const TelaSplash(),
             );
           },
@@ -237,14 +253,14 @@ class _TelaSplashState extends State<TelaSplash>
     try {
       final perfil = await BancoPerfil.carregar();
       final idiomaSalvo = perfil?['idioma'] as String?;
-      if (idiomaSalvo == null || idiomaSalvo.isEmpty) {
-        // Perfil sem idioma — pode ter sido criado em fluxo onde a coluna
-        // ficou null (signup com Confirm Email ligado). Preenche com o que
-        // o usuário está usando agora. Sem isso, o backend (mentor/carta)
-        // sempre cai no default 'pt'.
+      if (idiomaSalvo != T.idioma) {
+        // O idioma escolhido NESTE aparelho é a fonte da verdade: empurra
+        // local → perfil, nunca o contrário. A coluna nasce 'pt' por default
+        // do banco (mesmo quando o usuário escolheu outro idioma antes do
+        // cadastro), então puxar do perfil revertia a escolha do usuário —
+        // foi exatamente o que o revisor da Apple viu (rejeição 2.1a). O
+        // perfil só serve ao backend (Mentor/carta semanal).
         await BancoPerfil.atualizar(idioma: T.idioma);
-      } else if (idiomaSalvo != T.idioma) {
-        await T.definir(idiomaSalvo);
       }
     } catch (e) {
       debugPrint('Erro ao sincronizar idioma: $e');

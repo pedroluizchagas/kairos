@@ -132,19 +132,17 @@ class _TelaAuthState extends State<TelaAuth> {
         );
       } else {
         await supabase.auth.signInWithPassword(email: email, password: senha);
-        // Sincroniza o idioma do perfil (caso o usuário tenha trocado de aparelho).
-        // Se o perfil veio sem idioma — pode ter sido criado em signup com
-        // Confirm Email ligado, que não chega a chamar `atualizar(idioma:)` —
-        // persistimos o atual. Sem isso, o backend (Mentor/Carta) cai sempre
-        // no default 'pt' e o usuário vê resposta em PT mesmo com app em outro
-        // idioma.
+        // O idioma escolhido NESTE aparelho vence: empurra local → perfil.
+        // Nunca puxe do perfil para o local — a coluna nasce com default 'pt'
+        // (inclusive no signup com Confirm Email ligado, que não chega a
+        // gravar o idioma), então "sincronizar" do perfil revertia para PT a
+        // escolha que o usuário acabou de fazer no launch (rejeição Apple
+        // 2.1a). O perfil só alimenta o backend (Mentor/Carta).
         try {
           final perfil = await BancoPerfil.carregar();
           final idiomaSalvo = perfil?['idioma'] as String?;
-          if (idiomaSalvo == null || idiomaSalvo.isEmpty) {
+          if (idiomaSalvo != T.idioma) {
             await BancoPerfil.atualizar(idioma: T.idioma);
-          } else if (idiomaSalvo != T.idioma) {
-            await T.definir(idiomaSalvo);
           }
         } catch (_) {}
         if (!mounted) return;

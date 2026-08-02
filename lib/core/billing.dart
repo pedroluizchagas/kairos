@@ -78,9 +78,16 @@ class Billing {
   /// Product IDs por loja. iOS usa dois produtos de assinatura; Android usa um
   /// produto de assinatura (`premium`) cujos base plans mensal/anual vêm como
   /// ofertas. Devem casar com a App Store Connect / Play Console.
+  ///
+  /// O anual é consultado sob DOIS ids porque o código histórico usava
+  /// '.anual' enquanto toda a documentação de setup do App Store Connect
+  /// instruía criar '.yearly' — só um deles existe na loja; o outro volta em
+  /// `notFoundIDs` sem efeito colateral, e [mapearPlanos] deduplica por
+  /// período caso ambos existam. Confirme no ASC qual id foi criado.
   static const Set<String> _idsApple  = {
     'app.kairo.premium.monthly',
     'app.kairo.premium.anual',
+    'app.kairo.premium.yearly',
   };
   static const Set<String> _idsGoogle = {'premium'};
 
@@ -185,8 +192,24 @@ class Billing {
       porBasePlan.putIfAbsent(oferta.basePlanId, () => []).add(p);
     }
     planos.addAll(porBasePlan.values.map(_planoGoogle));
-    planos.sort((a, b) => a.precoBruto.compareTo(b.precoBruto));
-    return planos;
+    // No máximo um plano por período (o anual iOS é consultado sob dois ids
+    // possíveis). Se a loja reconhecer AMBOS, a preferência é determinística:
+    // '.yearly' (o id que a documentação do ASC instruiu criar) vence o
+    // '.anual' legado — nunca o critério acidental de "qual é mais barato".
+    final porPeriodo = <PeriodoPlano, PlanoPremium>{};
+    final indefinidos = <PlanoPremium>[];
+    for (final p in planos) {
+      if (p.periodo == PeriodoPlano.indefinido) {
+        indefinidos.add(p);
+        continue;
+      }
+      final atual = porPeriodo[p.periodo];
+      if (atual == null || p.produto.id == 'app.kairo.premium.yearly') {
+        porPeriodo[p.periodo] = p;
+      }
+    }
+    return [...porPeriodo.values, ...indefinidos]
+      ..sort((a, b) => a.precoBruto.compareTo(b.precoBruto));
   }
 
   /// Colapsa as ofertas de um mesmo base plan num único plano. A compra usa a

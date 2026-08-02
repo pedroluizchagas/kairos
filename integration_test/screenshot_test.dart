@@ -53,6 +53,9 @@ Future<void> main() async {
       anonKey: 'placeholder-anon-key',
     );
     await T.carregarLocal();
+    // Idioma fixo: carregarLocal agora herda o locale do SIMULADOR quando não
+    // há preferência salva — sem isso o screenshot varia entre máquinas/CI.
+    await T.definir('pt');
     await KC.carregar();
 
     Billing.instance.debugProdutosOverride = [

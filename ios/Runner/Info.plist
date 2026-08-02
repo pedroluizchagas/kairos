@@ -6,11 +6,22 @@
 	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<!-- Mensagem de voz pro Mentor: gravação do microfone (pacote record) -->
+	<!-- Mensagem de voz pro Mentor: gravação do microfone (pacote record).
+	     Valor-base em inglês (DEVELOPMENT_LANGUAGE = en); as traduções por
+	     idioma vivem em <lang>.lproj/InfoPlist.strings -->
 	<key>NSMicrophoneUsageDescription</key>
-	<string>O Kairo usa o microfone para você enviar mensagens de voz ao Mentor.</string>
+	<string>Kairo uses the microphone so you can send voice messages to the Mentor.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- Idiomas suportados: sem isso a App Store lista o app como English-only
+	     e o iOS não oferece o seletor de idioma por app nos Ajustes -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>pt</string>
+		<string>en</string>
+		<string>es</string>
+		<string>de</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Kairo</string>
 	<key>CFBundleExecutable</key>
@@ -54,11 +65,12 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- image_picker: foto de perfil (avatar) — exigidas pela Apple, app crasha sem elas -->
+	<!-- image_picker: foto de perfil (avatar) — exigidas pela Apple, app crasha sem elas.
+	     Valores-base em inglês; traduções em <lang>.lproj/InfoPlist.strings -->
 	<key>NSCameraUsageDescription</key>
-	<string>O Kairo usa a câmera para você tirar uma foto de perfil.</string>
+	<string>Kairo uses the camera so you can take a profile photo.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>O Kairo acessa suas fotos para você escolher uma imagem de perfil.</string>
+	<string>Kairo accesses your photos so you can choose a profile picture.</string>
 	<!-- Deep link kairo:// (retorno do Stripe Checkout — Fase 03) -->
 	<key>CFBundleURLTypes</key>
 	<array>

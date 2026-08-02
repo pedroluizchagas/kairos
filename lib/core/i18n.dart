@@ -9,9 +9,12 @@ class T {
   static String _l = 'pt';
   static String get idioma => _l;
 
-  /// Notifica qualquer parte da árvore que precise reconstruir ao trocar idioma.
-  /// O `MaterialApp` em main.dart escuta isso — assim toda a UI reflete a
-  /// mudança imediatamente, sem precisar destruir a pilha de navegação.
+  /// Notifica quem precisa reagir à troca de idioma (MaterialApp.locale,
+  /// reagendamento de notificações). ATENÇÃO: rotas já empilhadas NÃO se
+  /// re-renderizam sozinhas — quem troca o idioma com o app navegado precisa
+  /// reconstruir a própria pilha (ver `_trocarIdioma` em perfil.dart). O
+  /// idioma NÃO participa da ValueKey do MaterialApp: remontar o app inteiro
+  /// destruía a navegação no meio do onboarding (rejeição Apple 2.1a).
   static final ValueNotifier<String> idiomaNotifier = ValueNotifier<String>('pt');
 
   static const List<Map<String, String>> idiomasDisponiveis = [
@@ -26,10 +29,37 @@ class T {
 
   static Future<void> carregarLocal() async {
     final prefs = await SharedPreferences.getInstance();
+    final aparelho = PlatformDispatcher.instance.locale.languageCode;
+    final aparelhoVisto = prefs.getString('idioma_aparelho_visto');
+    await prefs.setString('idioma_aparelho_visto', aparelho);
+
     final salvo = prefs.getString('idioma');
     if (salvo != null && _valido(salvo)) {
+      // Se o idioma do APARELHO mudou desde o último boot (Ajustes > Kairo >
+      // Idioma no iOS — o seletor per-app existe porque declaramos
+      // CFBundleLocalizations — ou troca do idioma do sistema), isso é uma
+      // intenção explícita do usuário e vence a preferência salva. Sem isso,
+      // o revisor da Apple trocaria o idioma nos Ajustes e veria o app não
+      // mudar (2.1a de novo).
+      if (aparelhoVisto != null &&
+          aparelho != aparelhoVisto &&
+          _valido(aparelho) &&
+          aparelho != salvo) {
+        _l = aparelho;
+        await prefs.setString('idioma', aparelho);
+        idiomaNotifier.value = aparelho;
+        return;
+      }
       _l = salvo;
       idiomaNotifier.value = salvo;
+      return;
+    }
+    // Sem escolha salva: parte do idioma do aparelho, se suportado (pt segue
+    // como último recurso). Não persiste — a tela de seleção do primeiro
+    // launch continua aparecendo, já pré-selecionada no idioma do sistema.
+    if (_valido(aparelho)) {
+      _l = aparelho;
+      idiomaNotifier.value = aparelho;
     }
   }
 
@@ -395,6 +425,15 @@ class T {
     'New subscribers get 7 days free. After that, the subscription renews automatically at the displayed price until you cancel in your device settings.',
     'Los nuevos suscriptores obtienen 7 días gratis. Después, la suscripción se renueva automáticamente al precio mostrado hasta que canceles en los ajustes del dispositivo.',
     'Neue Abonnenten erhalten 7 Tage gratis. Danach verlängert sich das Abo automatisch zum angezeigten Preis, bis du in den Geräteeinstellungen kündigst.',
+  );
+  /// Divulgação de renovação SEM menção a teste grátis — usada quando o
+  /// usuário não é elegível (já teve assinatura): prometer trial a quem
+  /// seria cobrado na hora é metadata enganosa (Apple 3.1.2).
+  static String get premiumRenovacaoSemTeste => _g(
+    'A assinatura renova automaticamente pelo preço exibido até você cancelar nas configurações da loja. Cancele quando quiser.',
+    'The subscription renews automatically at the displayed price until you cancel in your store settings. Cancel anytime.',
+    'La suscripción se renueva automáticamente al precio mostrado hasta que canceles en los ajustes de la tienda. Cancela cuando quieras.',
+    'Das Abo verlängert sich automatisch zum angezeigten Preis, bis du in den Store-Einstellungen kündigst. Jederzeit kündbar.',
   );
   static String get assinaturaErro => _g(
     'Não foi possível concluir a compra. Tente novamente.',

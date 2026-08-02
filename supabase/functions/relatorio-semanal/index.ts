@@ -87,6 +87,17 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Corpo opcional: { semana_inicio, idioma }. O `idioma` é o que o usuário
+    // está VENDO no app — precedência sobre profiles.idioma (que nasce 'pt'
+    // por default e pode ainda não ter sincronizado). Mesma regra do
+    // mentor-chat. O cron de domingo invoca sem corpo → cai no perfil.
+    let corpo: Record<string, unknown> = {};
+    try { corpo = await req.json(); } catch (_) { /* sem corpo (cron) */ }
+    const idiomasValidos = ['pt', 'en', 'es', 'de'];
+    const idiomaCliente = typeof corpo.idioma === 'string' && idiomasValidos.includes(corpo.idioma)
+      ? corpo.idioma
+      : null;
+
     // Carrega perfil
     const { data: perfil } = await supabaseClient
       .from('profiles')
@@ -199,7 +210,7 @@ Agora escreva a carta semanal seguindo a estrutura JSON.`;
       body: JSON.stringify({
         model: MODELO_SONNET,
         max_tokens: 1200,
-        system: sistemaRelatorio((perfil?.idioma as string) ?? 'pt'),
+        system: sistemaRelatorio(idiomaCliente ?? (perfil?.idioma as string) ?? 'pt'),
         messages: [{ role: 'user', content: promptUsuario }],
       }),
     });

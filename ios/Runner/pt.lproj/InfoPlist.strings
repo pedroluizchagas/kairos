@@ -1,0 +1,4 @@
+/* Português — diálogos de permissão exibidos pelo iOS */
+"NSMicrophoneUsageDescription" = "O Kairo usa o microfone para você enviar mensagens de voz ao Mentor.";
+"NSCameraUsageDescription" = "O Kairo usa a câmera para você tirar uma foto de perfil.";
+"NSPhotoLibraryUsageDescription" = "O Kairo acessa suas fotos para você escolher uma imagem de perfil.";

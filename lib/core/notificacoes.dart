@@ -6,6 +6,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'banco.dart';
 import 'i18n.dart';
 
 class KairoNotificacoes {
@@ -67,6 +68,34 @@ class KairoNotificacoes {
   // O ValueNotifier não aceita listener async, então delegamos ao future.
   static void _aoTrocarIdioma() {
     _recriarCanais();
+    _reagendarPendentes();
+  }
+
+  /// Reagenda no idioma novo as notificações que já estavam agendadas —
+  /// título/corpo ficam congelados no payload no momento do agendamento,
+  /// então sem isso o usuário que trocou de idioma seguiria recebendo as
+  /// notificações repetitivas no idioma antigo para sempre.
+  static Future<void> _reagendarPendentes() async {
+    try {
+      final pendentes = await _plugin.pendingNotificationRequests();
+      final ids = pendentes.map((n) => n.id).toSet();
+      if (ids.contains(2)) await agendarCartaSemanal();
+      if (const {3, 4, 5}.any(ids.contains)) await agendarJardim();
+      if (ids.contains(1)) {
+        // O horário do lembrete vive no perfil; sem sessão (troca de idioma
+        // no primeiro launch) não há nada agendado e carregar() retorna null.
+        final perfil = await BancoPerfil.carregar();
+        final partes = ((perfil?['horario_lembrete'] as String?) ?? '').split(':');
+        if (partes.length >= 2) {
+          await agendarLembreteDiario(
+            int.tryParse(partes[0]) ?? 7,
+            int.tryParse(partes[1]) ?? 0,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[Notif] reagendamento pós-troca de idioma falhou: $e');
+    }
   }
 
   /// Recria os três canais Android com nomes/descrições no idioma atual.

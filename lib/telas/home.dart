@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/kairo_tema.dart';
 import '../core/banco.dart';
 import '../core/notificacoes.dart';
@@ -80,8 +81,19 @@ class _TelaHomeState extends State<TelaHome> {
 
       final perfil = await BancoPerfil.carregar();
       final horario = perfil?['horario_lembrete'] as String?;
+      final notifJardimAtivo = (perfil?['notif_jardim'] as bool?) ?? true;
 
       if (horario == null || horario.isEmpty) {
+        // A coluna null tanto significa "nunca configurou" quanto "desativou
+        // no Perfil" — a flag local distingue: quem desativou não pode ter o
+        // padrão reaplicado a cada boot (isso reativava o lembrete desligado).
+        final prefs = await SharedPreferences.getInstance();
+        final desativado = prefs.getBool('lembrete_desativado') ?? false;
+        if (desativado) {
+          await KairoNotificacoes.agendarCartaSemanal();
+          if (notifJardimAtivo) await KairoNotificacoes.agendarJardim();
+          return;
+        }
         // Primeira configuração (usuário pulou o onboarding): aplica os padrões
         // — mesmos do onboarding: lembrete 07:00 + carta semanal + jardim.
         await BancoPerfil.atualizar(horarioLembrete: '07:00:00');
@@ -91,10 +103,9 @@ class _TelaHomeState extends State<TelaHome> {
       } else {
         // Já configurado antes: re-arma a partir do perfil (sobrevive a
         // reinstalações). Respeita o toggle do Jardim salvo pelo usuário.
-        final notifJardim = (perfil?['notif_jardim'] as bool?) ?? true;
         await KairoNotificacoes.restaurarTodas(
           horarioLembrete: horario,
-          notifJardim: notifJardim,
+          notifJardim: notifJardimAtivo,
         );
       }
     } catch (e) {
