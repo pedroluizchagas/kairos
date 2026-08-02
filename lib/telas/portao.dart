@@ -158,6 +158,16 @@ class _TelaPortaoState extends State<TelaPortao> {
 
   @override
   Widget build(BuildContext context) {
+    // Elegibilidade ao teste grátis: quem já TEVE assinatura (status expirado/
+    // cancelado no entitlement) já consumiu a introductory offer — prometer
+    // "7 dias grátis" seria enganoso (Apple 3.1.2): o StoreKit cobraria na
+    // hora. O iOS não expõe a elegibilidade real, então usamos o histórico do
+    // entitlement como proxy conservador: só 'none' CONFIRMADO libera a
+    // promessa (null = leitura falhou → falha fechado; o StoreKit ainda
+    // aplica o trial na compra se o usuário for de fato elegível). No
+    // Android a Play já resolve isso nas ofertas (temTeste).
+    final elegivelTeste = Billing.instance.statusBruto == 'none';
+
     // Identifica mensal/anual para destacar o "melhor valor" (% de economia do
     // anual frente a 12× o mensal). Só aparece quando ambos os planos carregam.
     PlanoPremium? mensal;
@@ -203,7 +213,10 @@ class _TelaPortaoState extends State<TelaPortao> {
                               const SizedBox(height: 48),
                               Text(T.portaoTitulo, style: KT.displayL()),
                               const SizedBox(height: 16),
-                              Text(T.portaoChamada, style: KT.bodySerif(cor: KC.cinza)),
+                              Text(
+                                elegivelTeste ? T.portaoChamada : T.premiumChamada,
+                                style: KT.bodySerif(cor: KC.cinza),
+                              ),
 
                               const SizedBox(height: 40),
                               KT.divisor(),
@@ -248,6 +261,7 @@ class _TelaPortaoState extends State<TelaPortao> {
                                       destaque: ehAnual,
                                       economiaPct: ehAnual ? economiaPct : null,
                                       habilitado: !_processando,
+                                      mostrarTeste: pl.temTeste && elegivelTeste,
                                       onTap: () => _assinar(pl),
                                     ),
                                   );
@@ -264,7 +278,13 @@ class _TelaPortaoState extends State<TelaPortao> {
 
                               const SizedBox(height: 20),
                               // Divulgação obrigatória (Apple 3.1.2 / Google).
-                              Text(T.portaoRenovacao, style: KT.caption(cor: KC.fumo)),
+                              // Sem elegibilidade, a versão SEM menção a teste.
+                              Text(
+                                elegivelTeste
+                                    ? T.portaoRenovacao
+                                    : T.premiumRenovacaoSemTeste,
+                                style: KT.caption(cor: KC.fumo),
+                              ),
                               const SizedBox(height: 12),
                               _LinhaLegal(onTermos: () => _abrirLink(kUrlTermos),
                                   onPrivacidade: () => _abrirLink(kUrlPrivacidade)),
@@ -319,12 +339,16 @@ class _CartaoPlano extends StatelessWidget {
   final bool destaque;
   final int? economiaPct;
   final bool habilitado;
+  /// Se o badge/CTA de teste grátis deve aparecer — combina a oferta do
+  /// plano ([PlanoPremium.temTeste]) com a elegibilidade do usuário.
+  final bool mostrarTeste;
   final VoidCallback onTap;
   const _CartaoPlano({
     required this.plano,
     required this.destaque,
     required this.economiaPct,
     required this.habilitado,
+    required this.mostrarTeste,
     required this.onTap,
   });
 
@@ -384,14 +408,14 @@ class _CartaoPlano extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              // Sem teste grátis disponível (ex.: usuário já o consumiu na
-              // Play), o CTA vira "Assinar" — prometer teste seria enganoso.
+              // Sem teste grátis disponível (ex.: usuário já o consumiu),
+              // o CTA vira "Assinar" — prometer teste seria enganoso.
               Row(
                 children: [
-                  if (plano.temTeste) _Pilula(texto: T.portaoTesteBadge),
+                  if (mostrarTeste) _Pilula(texto: T.portaoTesteBadge),
                   const Spacer(),
                   Text(
-                    plano.temTeste ? T.portaoComecarTeste : T.premiumAssinar,
+                    mostrarTeste ? T.portaoComecarTeste : T.premiumAssinar,
                     style: KT.caption(cor: KC.kin),
                   ),
                   const SizedBox(width: 4),

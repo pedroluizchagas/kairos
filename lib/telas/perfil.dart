@@ -1,5 +1,8 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/kairo_tema.dart';
 import '../core/banco.dart';
@@ -10,6 +13,7 @@ import '../core/billing.dart';
 import '../core/cache.dart';
 import '../widgets/kairo_avatar.dart';
 import '../main.dart';
+import 'home.dart';
 import 'premium.dart';
 
 class TelaPerfil extends StatefulWidget {
@@ -164,13 +168,54 @@ class _TelaPerfilState extends State<TelaPerfil> {
 
     if (escolhido == null || escolhido == T.idioma) return;
 
-    // Salva local (dispara T.idiomaNotifier → MaterialApp reconstrói toda a
-    // árvore) e persiste no perfil para que o backend (Mentor/Carta) também
-    // veja o novo idioma. Não precisa mais reiniciar a navegação: o
-    // ValueListenableBuilder em main.dart já refaz o rebuild com a ValueKey
-    // do MaterialApp incluindo o idioma, e os getters de `T.*` re-resolvem.
+    // Salva local e reconstrói a pilha IMEDIATAMENTE (só operações locais —
+    // nada de rede antes da UI refletir a troca). O upsert no perfil roda
+    // desanexado: serve só ao backend (Mentor/Carta) e, se falhar, o sync do
+    // splash reenvia local → perfil na próxima abertura.
     await T.definir(escolhido);
-    await BancoPerfil.atualizar(idioma: escolhido);
+    unawaited(
+      BancoPerfil.atualizar(idioma: escolhido).catchError((Object e) {
+        debugPrint('Upsert de idioma falhou (splash reenvia): $e');
+      }),
+    );
+    if (!mounted) return;
+    _reconstruirPilha();
+  }
+
+  /// Alterna claro/escuro e reconstrói a pilha — as telas leem as cores de
+  /// `KC.*` direto no build (não via Theme.of), então sem reconstrução a UI
+  /// não recolore. Substitui o antigo remount global do MaterialApp, que
+  /// destruía a navegação e re-exibia a splash (~3s), parecendo um restart.
+  Future<void> _alternarTema(bool escuro) async {
+    if (escuro == KC.escuro) return;
+    await KC.alternar(escuro);
+    if (!mounted) return;
+    _reconstruirPilha();
+  }
+
+  /// Reconstrói a pilha de navegação (Home embaixo, Perfil em cima) para que
+  /// toda a UI reflita idioma/tema novos. Rotas já empilhadas não
+  /// re-renderizam sozinhas — e o remount global via ValueKey do MaterialApp
+  /// foi removido porque destruía a navegação (rejeição Apple 2.1a).
+  void _reconstruirPilha() {
+    final nav = Navigator.of(context);
+    nav.pushAndRemoveUntil(
+      PageRouteBuilder(
+        pageBuilder: (_, _, _) => const TelaHome(),
+        transitionsBuilder: (_, anim, _, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+      (route) => false,
+    );
+    nav.push(
+      PageRouteBuilder(
+        pageBuilder: (_, _, _) => const TelaPerfil(),
+        transitionsBuilder: (_, anim, _, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
   }
 
   Future<void> _escolherHorario() async {
@@ -230,6 +275,9 @@ class _TelaPerfilState extends State<TelaPerfil> {
     await KairoNotificacoes.agendarLembreteDiario(escolhido.hour, escolhido.minute);
     await KairoNotificacoes.agendarCartaSemanal();
     await KairoNotificacoes.agendarJardim();
+    // Escolher um horário desfaz o "desativado" deste aparelho.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('lembrete_desativado');
     await _carregar();
   }
 
@@ -237,6 +285,11 @@ class _TelaPerfilState extends State<TelaPerfil> {
     HapticFeedback.lightImpact();
     await KairoNotificacoes.cancelarLembrete();
     await BancoPerfil.atualizar(limparHorarioLembrete: true);
+    // Marca a escolha NESTE aparelho: a coluna do perfil vira null, que é o
+    // mesmo estado de "nunca configurou" — sem a flag, a Home reaplicava o
+    // padrão de 07:00 no próximo boot, reativando o que o usuário desligou.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('lembrete_desativado', true);
     await _carregar();
   }
 
@@ -605,7 +658,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
                     // Tema (claro/escuro)
                     Text(T.temaLabel, style: KT.micro()),
                     const SizedBox(height: 12),
-                    _TemaRow(),
+                    _TemaRow(aoAlternar: _alternarTema),
 
                     const SizedBox(height: 48),
                     KT.divisor(),
@@ -855,6 +908,9 @@ class _LinhaPremiumState extends State<_LinhaPremium> {
 // ── LINHA DO TOGGLE DE TEMA (claro/escuro) ───────────────────────────────────
 
 class _TemaRow extends StatelessWidget {
+  final Future<void> Function(bool escuro) aoAlternar;
+  const _TemaRow({required this.aoAlternar});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -868,12 +924,14 @@ class _TemaRow extends StatelessWidget {
               rotulo: T.temaClaro,
               escuro: false,
               selecionado: !KC.escuro,
+              aoAlternar: aoAlternar,
             )),
             const SizedBox(width: 12),
             Expanded(child: _BotaoTema(
               rotulo: T.temaEscuro,
               escuro: true,
               selecionado: KC.escuro,
+              aoAlternar: aoAlternar,
             )),
           ],
         ),
@@ -886,18 +944,20 @@ class _BotaoTema extends StatelessWidget {
   final String rotulo;
   final bool escuro;
   final bool selecionado;
+  final Future<void> Function(bool escuro) aoAlternar;
   const _BotaoTema({
     required this.rotulo,
     required this.escuro,
     required this.selecionado,
+    required this.aoAlternar,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async {
+      onTap: () {
         HapticFeedback.lightImpact();
-        await KC.alternar(escuro);
+        aoAlternar(escuro);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 320),

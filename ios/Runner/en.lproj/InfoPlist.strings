@@ -1,0 +1,4 @@
+/* English — permission dialogs shown by iOS */
+"NSMicrophoneUsageDescription" = "Kairo uses the microphone so you can send voice messages to the Mentor.";
+"NSCameraUsageDescription" = "Kairo uses the camera so you can take a profile photo.";
+"NSPhotoLibraryUsageDescription" = "Kairo accesses your photos so you can choose a profile picture.";
