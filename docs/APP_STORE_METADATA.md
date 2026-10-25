@@ -40,14 +40,14 @@ Três perguntas guiadas por dia: manhã, tarde e noite. Você escreve sem pressa
 Todo domingo, às 21h, o Mentor escreve uma carta sobre a sua semana: padrões que ele percebeu, conquistas silenciosas e uma pergunta para os próximos sete dias.
 
 — MODO SILÊNCIO —
-Quando o ruído cresce, o Kairo desliga o mundo por você. Quatro formas de pausa — foco profundo, meditação, pausa estratégica e reset emocional — com sons ambientes e o Não Perturbe ativado automaticamente.
+Quando o ruído cresce, o Kairo sustenta o espaço. Quatro formas de pausa — foco profundo, meditação, pausa estratégica e reset emocional — com sons ambientes, sem contador na tela e sem avisos do Kairo durante a sessão.
 
 — RELAXA E DURMA —
 Adormeça com sons e frequências que continuam tocando mesmo de tela desligada. Chuva, vento, bambu e frequências como 432 Hz e 528 Hz, com timer e fade-out suave.
 
 COMO FUNCIONA
 1. Você responde a quatro perguntas, e o Mentor passa a te conhecer.
-2. Recebe sua primeira prática para os próximos sete dias.
+2. Escolhe até cinco práticas no Dôjo.
 3. Conversa com o Mentor sempre que precisar.
 4. Recebe sua carta no domingo, às 21h.
 
@@ -101,5 +101,6 @@ https://thekairo.app
 
 - **Screenshots (Guideline 2.3.7 — motivo da rejeição de 07/2026):** nenhuma screenshot pública pode mostrar preço, "7 dias grátis", "teste grátis", "Economize X%" ou a paywall. Refazer o conjunto sem a tela do portão/premium. A screenshot da paywall vai APENAS no campo de review do In-App Purchase (App Store Connect → assinatura → Review Information), que não é público.
 - **Não use** as métricas da landing (95%, 1.2M+ práticas, 48k+ cartas) nem o rating "4.9" do JSON-LD nos textos da loja — são placeholders fictícios e violam as diretrizes da App Store.
+- **Só descreva o que está no app (out/2026):** o Modo Silêncio NÃO ativa o Não Perturbe — só pausa os avisos do próprio Kairo durante a sessão; o onboarding NÃO entrega uma "primeira prática" — o usuário escolhe as práticas no Dôjo; o Mentor conhece o perfil e a conversa, mas não lê reflexões nem cartas. Promessa de recurso inexistente é motivo de rejeição (Guideline 2.3).
 - A landing tem um e-mail antigo no rodapé (`ola@kairoapp.com`). O correto é **contact@thekairo.app** — vale corrigir o rodapé, mas não afeta a ficha da loja.
 - Categoria sugerida: **Saúde e Fitness** (primária) / **Estilo de Vida** (secundária).
