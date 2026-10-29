@@ -44,8 +44,8 @@ que é iniciado apenas pelo Relaxa e Durma (`lib/core/audio.dart`, chamado por
 2. Na mesma visita, em **Segurança dos dados**, trocar a URL de exclusão de
    conta para https://www.thekairo.app/suporte#excluir-conta.
 
-> O nome "Alexandra" aparece no vídeo público. Confirme que a pessoa titular
-> da conta autoriza o uso do nome.
+> O nome "Alexandra" aparece no vídeo público. A titular da conta autorizou o
+> uso do nome (29/10/2026).
 
 ---
 
