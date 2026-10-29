@@ -11,48 +11,38 @@ que é iniciado apenas pelo Relaxa e Durma (`lib/core/audio.dart`, chamado por
 
 ---
 
-## Situação em 25/10/2026: vídeo provisório no ar
+## Situação em 29/10/2026: vídeo final no ar
 
 **Feito**
 - A página https://www.thekairo.app/suporte está no ar nos 4 idiomas, com o
   vídeo na âncora `#video` (repo `lp-kairo`).
-- Um vídeo **provisório** está publicado em
-  `lp-kairo/public/videos/kairo-demo.mp4` (commits `62f5da9` e `955a183` da
-  lp-kairo). É um passeio de 1:32 pelo app em inglês, no tema escuro e com
-  a conta "Alexandra": Início, Modo Silêncio, Relaxa e Durma (som Jungle, só
-  com o app aberto), Mentor, Dôjo, Jardim e Biblioteca.
-- A gravação original (HEVC, 1080×2400) está em
-  `~/Downloads/kairo-demo-original-hevc.mp4`. O site usa uma cópia em
-  H.264, porque o Chrome não decodifica HEVC. A cópia tem 720×1536, sem a
-  faixa preta do topo da gravação, e o player usa exatamente essa
-  proporção. O comando de conversão está no README da lp-kairo.
+- O **vídeo final** está publicado em `lp-kairo/public/videos/kairo-demo.mp4`
+  (commit `12bec6d` da lp-kairo; 2:14, H.264 720×1536, 30 fps), com o poster
+  `kairo-demo.jpg`. Ele junta duas gravações do mesmo aparelho, com o app em
+  inglês, no tema escuro e com a conta "Alexandra":
+  - o original até abrir o Relaxa e Durma: Início e Modo Silêncio;
+  - o complemento gravado em 28/10, sem cortes: Chuva → 30 minutos, a
+    notificação na barra, ~13 s de tela bloqueada com o som tocando,
+    Encerrar e a barra já sem a notificação;
+  - o resto do original: Mentor, Dôjo, Jardim e Biblioteca.
+
+  As emendas caem na lista do Relaxa e Durma, que é igual nas duas
+  gravações. Os trechos e o comando estão em "Montagem do vídeo final",
+  no fim.
+- Na montagem, a gaveta de apps do aparelho ficou desfocada, porque expunha
+  os apps instalados. A chuva subiu 24 dB, com limitador: a captura saiu a
+  −46 LUFS, inaudível, e no vídeo está a −22 LUFS.
+- O texto e os 6 capítulos da seção do vídeo descrevem o vídeo final nos 4
+  idiomas. Diferente do roteiro, a volta ao app foi pelo ícone, não pela
+  notificação, e a tela de bloqueio não mostra a notificação do Kairo. Os
+  capítulos não prometem nenhuma das duas coisas.
 - Os textos da declaração estão prontos (abaixo), mas **não foram enviados**.
 
-**Falta, nesta ordem**
-1. **Gravar o complemento** (~30–40 s; roteiro em "Gravação do complemento",
-   abaixo). É o trecho que a declaração exige: o vídeo atual não mostra a
-   notificação nem o som com a tela bloqueada.
-2. **Montar o vídeo final.** O complemento entra no lugar do trecho do
-   Jungle (≈0:11–0:23 do original, do toque em Relax & Sleep até a volta ao
-   Início). As duas partes levam o mesmo corte e a mesma codificação, e o
-   arquivo mantém o nome `kairo-demo.mp4`.
-3. **Reescrever o texto da seção do vídeo** nos 4 idiomas
-   (`suporte.video.body` e `suporte.video.capitulos` em
-   `lp-kairo/src/messages/*.json`). Hoje ele descreve o roteiro final
-   (Chuva, notificação, tela bloqueada), não o vídeo no ar. Os capítulos
-   devem seguir a ordem real do vídeo final, com o mesmo número de itens nos
-   4 idiomas.
-4. **Poster** (opcional): `lp-kairo/public/videos/kairo-demo.jpg`, em
-   720×1536. Sem ele, a página mostra o primeiro quadro do vídeo (o Início).
-5. **Publicar:** `npm run build` na lp-kairo, conferir a página no
-   navegador, commit e push na `main` (a Vercel publica em ~1 min).
-6. **Enviar a declaração** no Play Console com os textos e o link abaixo,
-   depois de passar pelo checklist do fim.
-7. Na mesma visita ao Play Console, em **Segurança dos dados**, trocar a URL
-   de exclusão de conta para https://www.thekairo.app/suporte#excluir-conta.
-
-Os passos 2 a 5 são técnicos: com o arquivo em `~/Downloads`, peça ao Claude
-Code para "montar o vídeo final do /suporte" seguindo este documento.
+**Falta (no Play Console)**
+1. **Enviar a declaração** com os textos e o link abaixo, depois de passar
+   pelo checklist do fim.
+2. Na mesma visita, em **Segurança dos dados**, trocar a URL de exclusão de
+   conta para https://www.thekairo.app/suporte#excluir-conta.
 
 > O nome "Alexandra" aparece no vídeo público. Confirme que a pessoa titular
 > da conta autoriza o uso do nome.
@@ -79,7 +69,11 @@ Code para "montar o vídeo final do /suporte" seguindo este documento.
 
 ## Link do vídeo
 
-> https://www.thekairo.app/suporte#video
+> https://www.thekairo.app/en/suporte#video
+
+Use a versão em inglês. O link sem `/en` também funciona, mas escolhe o
+idioma pelo navegador: se o do revisor não pedir pt, en, es ou de, a página
+abre em português.
 
 Se o formulário recusar uma página e pedir o arquivo de vídeo:
 `https://www.thekairo.app/videos/kairo-demo.mp4`.
@@ -88,10 +82,13 @@ Se o formulário recusar uma página e pedir o arquivo de vídeo:
 
 ## Gravação do complemento (Android, vertical, ~30–40 s)
 
+Gravado em 28/10/2026 (`~/Downloads/segundo-video-kairo.mp4`). O roteiro
+fica aqui para o caso de regravar.
+
 O caso de uso Media playback exige que o vídeo mostre **o usuário iniciando a
 reprodução** — som tocando sozinho ao abrir o app não conta — e o som
-seguindo fora do app. O passeio pelo app já está gravado; falta só este
-trecho.
+seguindo fora do app. O passeio pelo app está na gravação original; este
+trecho completa o vídeo.
 
 **Antes de gravar:**
 - Use o mesmo aparelho e a mesma conta da gravação anterior, com o app em
@@ -115,15 +112,55 @@ trecho.
 4. Desbloqueie, toque na notificação → o app volta à tela do som → **End**.
    O som para; puxe a barra para mostrar que a notificação sumiu.
 
-Salve o arquivo em `~/Downloads` (por exemplo, `kairo-demo-fgs.mp4`) e siga
-para o passo 2 de "Falta".
+Salve o arquivo em `~/Downloads` e monte o vídeo como em "Montagem do vídeo
+final", abaixo.
 
 ## Checklist antes de enviar
 
-- [ ] O vídeo abre em `https://www.thekairo.app/suporte#video` numa aba anônima.
-- [ ] O vídeo mostra o toque que inicia o som e o áudio seguindo com a tela
+- [x] O vídeo abre em `https://www.thekairo.app/en/suporte#video` numa aba
+      anônima (conferido em 29/10).
+- [x] O vídeo mostra o toque que inicia o som e o áudio seguindo com a tela
       bloqueada.
-- [ ] Os capítulos da página descrevem o vídeo final, nos 4 idiomas.
+- [x] Os capítulos da página descrevem o vídeo final, nos 4 idiomas.
 - [ ] O AAB enviado continua só com `mediaPlayback`: conferir
       `build/app/intermediates/packaged_manifests/release/processReleaseManifestForPackage/AndroidManifest.xml`
       depois de mexer em plugins.
+
+## Montagem do vídeo final (29/10/2026)
+
+O original é `~/Downloads/kairo-demo-original-hevc.mp4` e o complemento é
+`~/Downloads/segundo-video-kairo.mp4`, ambos em HEVC 1080×2400.
+
+| Trecho | Arquivo | De → até | Mostra |
+|---|---|---|---|
+| 1 | original | 0 → 11,40 s | Início, Modo Silêncio, abre o Relaxa e Durma |
+| 2 | complemento | 2,40 → 55,20 s | Chuva → 30 minutos … barra sem a notificação |
+| 3 | original | 22,20 s → fim | Início, Mentor, Dôjo, Jardim, Biblioteca |
+
+- O áudio de cada trecho começa no 1º quadro dele (2,435 e 22,239 s). Se o
+  corte do áudio ficasse em 2,40, ele sairia 35 ms à frente da imagem.
+- A gaveta de apps aparece nítida em 14,20–15,70, 21,09–23,20 e
+  52,46–53,45 s do complemento, e é ali que entra o `gblur`. Na barra de
+  notificações, o próprio sistema já desfoca o fundo.
+- O `fps=30` vai depois do concat: sem taxa fixa, o x264 calcula o nível
+  H.264 errado.
+
+```bash
+OR=~/Downloads/kairo-demo-original-hevc.mp4; NV=~/Downloads/segundo-video-kairo.mp4
+CORTE="crop=1080:2304:0:96,scale=720:-2"
+BLUR="gblur=sigma=24:enable='between(t,14.20,15.70)+between(t,21.09,23.20)+between(t,52.46,53.45)'"
+ffmpeg -i "$OR" -i "$NV" -i "$OR" -filter_complex "
+[0:v]$CORTE,trim=end=11.40,setpts=PTS-STARTPTS[v0];
+[0:a]atrim=end=11.40,asetpts=PTS-STARTPTS[a0];
+[1:v]$CORTE,$BLUR,trim=start=2.40:end=55.20,setpts=PTS-STARTPTS[v1];
+[1:a]atrim=start=2.435:end=55.20,asetpts=PTS-STARTPTS,volume=24dB,alimiter=limit=0.84:attack=5:release=50:level=disabled[a1];
+[2:v]$CORTE,trim=start=22.20,setpts=PTS-STARTPTS[v2];
+[2:a]atrim=start=22.239,asetpts=PTS-STARTPTS[a2];
+[v0][a0][v1][a1][v2][a2]concat=n=3:v=1:a=1[vc][a];[vc]fps=30[v]" \
+  -map "[v]" -map "[a]" -c:v libx264 -crf 23 -pix_fmt yuv420p -c:a aac \
+  -movflags +faststart kairo-demo.mp4
+```
+
+Os tempos valem só para essas duas gravações. Numa regravação, meça de novo
+com a luminância média de cada quadro (`signalstats`: app ≈ 42, gaveta
+≈ 204, tela inicial ≈ 110) e confira os quadros em volta de cada emenda.
