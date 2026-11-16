@@ -24,12 +24,26 @@ alter table public.subscriptions
 
 -- Backfill das linhas Stripe pré-existentes (price_id/stripe_subscription_id
 -- são as colunas antigas do doc 03; ficam para trás-compat, não as removo aqui).
-update public.subscriptions
-set provider        = 'stripe',
-    product_id      = coalesce(product_id, price_id),
-    provider_sub_id = coalesce(provider_sub_id, stripe_subscription_id)
-where stripe_customer_id is not null
-  and provider = 'none';
+-- Guard de existência: num banco que já nasceu no 08 novo essas colunas nunca
+-- existiram (ou o próprio 08 as portou e dropou) — sem o guard, este UPDATE
+-- quebrava a promessa do README de rodar 01→N em banco limpo.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='subscriptions' and column_name='price_id'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='subscriptions' and column_name='stripe_subscription_id'
+  ) then
+    update public.subscriptions
+    set provider        = 'stripe',
+        product_id      = coalesce(product_id, price_id),
+        provider_sub_id = coalesce(provider_sub_id, stripe_subscription_id)
+    where stripe_customer_id is not null
+      and provider = 'none';
+  end if;
+end $$;
 
 -- Vocabulário de provider.
 alter table public.subscriptions

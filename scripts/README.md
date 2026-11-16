@@ -16,6 +16,9 @@ Schemas Postgres do projeto Kairo (Supabase). Rodar **na ordem numerada** no SQL
 10. `10_indices_revisao.sql` — auditoria de índices p/ 30k MAUs (sem efeito; registro de cobertura)
 11. `11_migracao_categorias_enum.sql` — migra `praticas.categoria` de rótulos PT para enums ASCII estáveis
 12. `12_billing_multiplataforma.sql` — billing agnóstico de provider (Apple/Google/Stripe): colunas novas em `subscriptions` + `billing_events` + `is_premium()` com `grace` + RPC `aplicar_estado_assinatura()`. Aditivo sobre o `08`.
+13. `13_checkout_first_email.sql` — checkout-first na landing: `pending_entitlements` (entitlement à espera de conta, por e-mail) + `aplicar_estado_por_email()` + trigger que reconcilia no signup. Depende do `12`.
+14. `14_cortesias.sql` — acesso cortesia por e-mail (testadores do closed testing/TestFlight, parceiros): allowlist `cortesias` + `adicionar_cortesia()`/`remover_cortesia()` + trigger que concede no signup, tudo via a RPC canônica com provider `cortesia`. Quem está na lista entra direto, sem ver o paywall — sem novo build. Depende do `12`.
+15. `15_denuncias_ia.sql` — denúncia de conteúdo gerado por IA (resposta do Mentor / carta semanal), exigência da política de Conteúdo Gerado por IA do Google Play: tabela `denuncias_ia` com RLS só de INSERT próprio; a moderação lê pelo SQL Editor. Precisa existir em produção antes de um build com a denúncia ir para revisão (aplicado em 04/10/2026).
 
 > Após rodar o `09`, é obrigatório setar 2 GUC com `ALTER DATABASE postgres SET …` (ver cabeçalho do arquivo e `docs/06-runbook-deploy.md §6`). Sem isso o dispatcher é no-op silencioso por design.
 
