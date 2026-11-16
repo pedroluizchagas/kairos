@@ -17,13 +17,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
 
-    <!-- image_picker: acesso à galeria -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <!-- Compatibilidade com Android < 13 -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28"/>
+    <!-- Galeria SEM permissão de mídia: o image_picker abre o seletor do
+         sistema (ACTION_GET_CONTENT), que libera só a foto escolhida.
+         READ_MEDIA_IMAGES para escolher só a foto de perfil viola a política
+         de fotos/vídeos do Play e causa rejeição na revisão. -->
     <!-- image_picker: acesso à câmera -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <!-- Mensagem de voz pro Mentor (pacote record): gravação do microfone -->
