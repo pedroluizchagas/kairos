@@ -488,3 +488,30 @@ class BancoReflexoes {
         .eq('user_id', user.id);
   }
 }
+
+// ── DENÚNCIAS DE CONTEÚDO DE IA ──────────────────────────────────────────────
+
+class BancoDenuncias {
+  /// Registra a denúncia de um conteúdo gerado por IA (política de Conteúdo
+  /// Gerado por IA do Google Play). [origem]: 'mentor' | 'carta'; [motivo]:
+  /// 'ofensivo' | 'perigoso' | 'outro' — os CHECKs do
+  /// scripts/15_denuncias_ia.sql recusam qualquer outro valor.
+  ///
+  /// Sem sessão lança, em vez de retornar calado: a UI não pode agradecer
+  /// por uma denúncia que não foi gravada.
+  static Future<void> enviar({
+    required String origem,
+    required String motivo,
+    required String conteudo,
+  }) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) throw Exception('sem_sessao');
+
+    await supabase.from('denuncias_ia').insert({
+      'user_id': user.id,
+      'origem': origem,
+      'motivo': motivo,
+      'conteudo': conteudo,
+    });
+  }
+}

@@ -1247,6 +1247,50 @@ class T {
     'Jetzt nicht',
   );
 
+  // ── DENÚNCIA DE CONTEÚDO DE IA (política de IA generativa do Google Play) ──
+  static String get denunciaTitulo => _g(
+    'Denunciar conteúdo',
+    'Report content',
+    'Denunciar contenido',
+    'Inhalt melden',
+  );
+  static String get denunciaAviso => _g(
+    'O texto será enviado à nossa equipe para análise.',
+    'The text will be sent to our team for review.',
+    'El texto se enviará a nuestro equipo para su revisión.',
+    'Der Text wird zur Prüfung an unser Team gesendet.',
+  );
+  static String get denunciaOfensivo => _g(
+    'Ofensivo ou inadequado',
+    'Offensive or inappropriate',
+    'Ofensivo o inapropiado',
+    'Beleidigend oder unangemessen',
+  );
+  static String get denunciaPerigoso => _g(
+    'Perigoso ou prejudicial',
+    'Dangerous or harmful',
+    'Peligroso o dañino',
+    'Gefährlich oder schädlich',
+  );
+  static String get denunciaOutro => _g(
+    'Outro motivo',
+    'Something else',
+    'Otro motivo',
+    'Anderer Grund',
+  );
+  static String get denunciaEnviada => _g(
+    'Obrigado. Vamos analisar.',
+    'Thank you. We will look into it.',
+    'Gracias. Lo revisaremos.',
+    'Danke. Wir sehen uns das an.',
+  );
+  static String get denunciarCarta => _g(
+    'Denunciar esta carta',
+    'Report this letter',
+    'Denunciar esta carta',
+    'Diesen Brief melden',
+  );
+
   // ── AVATAR ─────────────────────────────────────────────────────────────────
   static String get trocarFoto    => _g('Trocar foto',    'Change photo',   'Cambiar foto',   'Foto ändern');
   static String get adicionarFoto => _g('Adicionar foto', 'Add photo',      'Agregar foto',   'Foto hinzufügen');

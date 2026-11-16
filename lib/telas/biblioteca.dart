@@ -10,6 +10,7 @@ import '../core/consentimento_ia.dart';
 import '../core/datas.dart';
 import '../core/i18n.dart';
 import '../main.dart';
+import '../widgets/denuncia_ia.dart';
 
 class TelaBiblioteca extends StatefulWidget {
   const TelaBiblioteca({super.key});
@@ -600,6 +601,12 @@ class _TelaCartaCompleta extends StatelessWidget {
     return '${T.formatarDiaMes(diaI, mesI)} → ${T.formatarDiaMes(diaF, mesF)}';
   }
 
+  /// Texto inteiro da carta (seções preenchidas), para a denúncia.
+  String _textoCompleto() => ['observacoes', 'padroes', 'conquistas', 'pergunta']
+      .map((k) => (carta[k] as String?)?.trim() ?? '')
+      .where((t) => t.isNotEmpty)
+      .join('\n\n');
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -642,6 +649,28 @@ class _TelaCartaCompleta extends StatelessWidget {
                       _Secao(rotulo: T.conquistas, texto: carta['conquistas'] as String?),
                     if ((carta['pergunta'] as String?)?.isNotEmpty ?? false)
                       _Secao(rotulo: T.paraProximaSemana, texto: carta['pergunta'] as String?, destaque: true),
+
+                    // A carta é gerada por IA: política de Conteúdo Gerado
+                    // por IA do Google Play exige denúncia dentro do app.
+                    GestureDetector(
+                      onTap: () => denunciarConteudoIA(
+                        context,
+                        origem: 'carta',
+                        conteudo: _textoCompleto(),
+                      ),
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.outlined_flag, size: 16, color: KC.fumo),
+                            const SizedBox(width: 8),
+                            Text(T.denunciarCarta, style: KT.caption(cor: KC.fumo)),
+                          ],
+                        ),
+                      ),
+                    ),
 
                     const SizedBox(height: 64),
                   ],

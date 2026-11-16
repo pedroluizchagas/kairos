@@ -11,6 +11,7 @@ import '../core/banco.dart';
 import '../core/consentimento_ia.dart';
 import '../core/transcricao.dart';
 import '../core/i18n.dart';
+import '../widgets/denuncia_ia.dart';
 import 'premium.dart';
 
 class TelaMentor extends StatefulWidget {
@@ -1013,14 +1014,22 @@ class _BolhaMensagem extends StatelessWidget {
     final largura = MediaQuery.of(context).size.width;
 
     if (mensagem.doMentor) {
-      // Mensagem do Mentor — esquerda, máx 75% da largura
+      // Mensagem do Mentor — esquerda, máx 75% da largura. Segurar abre a
+      // denúncia (política de Conteúdo Gerado por IA do Google Play).
       return Padding(
         padding: const EdgeInsets.only(bottom: 32),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: largura * 0.75),
           child: Align(
             alignment: Alignment.centerLeft,
-            child: _TextoAnimado(texto: mensagem.texto),
+            child: GestureDetector(
+              onLongPress: () => denunciarConteudoIA(
+                context,
+                origem: 'mentor',
+                conteudo: mensagem.texto,
+              ),
+              child: _TextoAnimado(texto: mensagem.texto),
+            ),
           ),
         ),
       );
