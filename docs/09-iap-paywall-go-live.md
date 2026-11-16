@@ -108,6 +108,10 @@ Todas as 11 tabelas com RLS. `subscriptions` só com policy `SELECT own` (sem wr
 - [ ] Build no Mac → **TestFlight** → **teste sandbox**: comprar → `verify-purchase` libera Premium em segundos.
 - [ ] URLs reais de Termos/Privacidade no `portao.dart` (hoje placeholders `kairo.app/...`), após a `lp-kairo` publicar `/termos` e `/privacidade`.
 
+**Testadores (closed testing / TestFlight):**
+- [x] ~~Rodar `scripts/14_cortesias.sql` no SQL Editor e cadastrar os testadores~~ **Feito 20/08** via `supabase db query --linked`: script aplicado + 17 e-mails cadastrados (40 dias — teste prolongado, válido até **29/09/2026**). Cadastro no Play Console/TestFlight NÃO cria entitlement — sem a cortesia, o hard paywall manda o testador assinar (reporte de 20/08). Novos testadores: `select public.adicionar_cortesia('email-de-login-no-app')`. Ao fim da fase: `remover_cortesia()`.
+- [ ] Uma testadora do teste fechado (a de motivo `passe_livre` em `public.cortesias`) tem assinatura **google/active até 23/08** (compra real ou test card — conferir cobrança em Play Console → Order management e reembolsar se real). Quando expirar, re-rodar `adicionar_cortesia` para ela voltar a ter acesso.
+
 **Auth no Studio (§5 do runbook — pendências reais encontradas):**
 - [ ] **Site URL** está `http://localhost:3000` → trocar pela URL de produção.
 - [ ] **Leaked password protection** desligada → ligar.
@@ -115,7 +119,17 @@ Todas as 11 tabelas com RLS. `subscriptions` só com policy `SELECT own` (sem wr
 - [ ] Redirect URLs com o domínio.
 
 **Android (deferido):**
-- [ ] `google-webhook` deploy + secrets `GOOGLE_*` + produto/base plans + RTDN.
+- [x] `google-webhook` deploy + secrets `GOOGLE_*` + produto/base plans + RTDN (feito 18/07).
+
+**Android — produção no Google Play (10/2026):**
+- [x] Acesso de produção concedido (closed testing 12+/14 dias cumprido).
+- [x] Build `1.0.0+5`: sem `READ_MEDIA_IMAGES` (política de fotos/vídeos — o image_picker usa o seletor do sistema) + denúncia de conteúdo de IA (política de IA generativa: segurar a resposta do Mentor; "Denunciar esta carta" na carta) + Play Billing Library 8 (`in_app_purchase` 3.3 / `in_app_purchase_android` 0.5 — o Console recusa a Billing 7 desde 31/08/2026; o versionCode 4 ficou queimado nesse erro).
+- [x] `scripts/15_denuncias_ia.sql` aplicado em produção (04/10; RLS + policy de INSERT conferidos).
+- [x] Cortesia da conta de revisão `revisao.play@thekairo.app` cadastrada até 04/10/2027 (as cortesias dos testadores venceram em 29–30/09).
+- [x] Conta `revisao.play@thekairo.app` criada em 09/10 (Admin API = Add user + Auto Confirm). Login real + cortesia `active` até 04/10/2027 conferidos com o token do próprio usuário. Senha fora do repo.
+- [ ] Credenciais da conta de revisão em Conteúdo do app → Acesso ao app.
+- [ ] Segurança dos dados: URL de exclusão de conta = `https://www.thekairo.app/privacidade` (seção 7).
+- [ ] Produção: países → nova versão (AAB + notas) → Visão geral da publicação → Enviar para revisão → (aprovado) Publicar.
 
 **Go-live polish:**
 - [ ] `delete-user` (limpeza de avatares no Storage ao deletar conta — `06 §8.3`).
